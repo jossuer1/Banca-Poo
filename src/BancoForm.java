@@ -1,9 +1,7 @@
 import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.*;
 
 public class BancoForm extends JFrame {
-
     private JPanel panelBanco;
     private JLabel labelUsuario;
     private JLabel labelSaldo;
@@ -12,96 +10,141 @@ public class BancoForm extends JFrame {
     private JButton btnTransferencia;
     private JButton btnSalir;
     private JTextArea historialArea;
+    private JScrollPane scroll;
 
     private double saldo = 1000.00;
 
     public BancoForm(String usuario) {
 
-        setTitle("Banco - Bienvenido");
-        setSize(600, 400);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setTitle("Banco - Operaciones");
+        setSize(500, 420);
         setLocationRelativeTo(null);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setLayout(null);
 
-        setContentPane(panelBanco);
+        labelUsuario = new JLabel("Cliente: " + usuario);
+        labelUsuario.setBounds(20, 20, 300, 30);
+        add(labelUsuario);
 
-        // Mostrar datos iniciales
-        labelUsuario.setText("Cliente: " + usuario);
-        labelSaldo.setText("Saldo: $" + saldo);
+        labelSaldo = new JLabel("Saldo actual: $" + saldo);
+        labelSaldo.setBounds(20, 50, 300, 30);
+        add(labelSaldo);
 
-        // BOTÓN DEPOSITO
-        btnDeposito.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
+        btnDeposito = new JButton("Depósito");
+        btnDeposito.setBounds(20, 100, 150, 40);
+        add(btnDeposito);
 
-                String valor = JOptionPane.showInputDialog("Ingrese cantidad a depositar:");
-                if (valor == null || valor.isEmpty()) return;
+        btnRetiro = new JButton("Retiro");
+        btnRetiro.setBounds(200, 100, 150, 40);
+        add(btnRetiro);
 
-                double monto = Double.parseDouble(valor);
-                saldo += monto;
+        btnTransferencia = new JButton("Transferencia");
+        btnTransferencia.setBounds(20, 160, 150, 40);
+        add(btnTransferencia);
 
-                actualizarSaldo();
-                agregarHistorial("Depósito de $" + monto);
+        btnSalir = new JButton("Salir");
+        btnSalir.setBounds(200, 160, 150, 40);
+        add(btnSalir);
+
+        historialArea = new JTextArea();
+        historialArea.setEditable(false);
+
+        scroll = new JScrollPane(historialArea);
+        scroll.setBounds(20, 220, 430, 150);
+        add(scroll);
+
+        acciones();
+    }
+
+    private void acciones() {
+
+        btnDeposito.addActionListener(e -> {
+            String valor = JOptionPane.showInputDialog("Cantidad a depositar:");
+            if (!entradaValida(valor)) return;
+
+            double monto = Double.parseDouble(valor);
+            if (monto <= 0) {
+                mensaje("Ingrese un monto mayor a 0");
+                return;
             }
+
+            saldo += monto;
+            actualizarSaldo();
+            historialArea.append("Depósito de $" + monto + "\n");
+            mensaje("Depósito exitoso");
         });
 
-        // BOTÓN RETIRO
-        btnRetiro.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
+        btnRetiro.addActionListener(e -> {
+            String valor = JOptionPane.showInputDialog("Cantidad a retirar:");
+            if (!entradaValida(valor)) return;
 
-                String valor = JOptionPane.showInputDialog("Ingrese cantidad a retirar:");
-                if (valor == null || valor.isEmpty()) return;
-
-                double monto = Double.parseDouble(valor);
-
-                if (monto > saldo) {
-                    JOptionPane.showMessageDialog(null, "Saldo insuficiente");
-                    return;
-                }
-
-                saldo -= monto;
-
-                actualizarSaldo();
-                agregarHistorial("Retiro de $" + monto);
+            double monto = Double.parseDouble(valor);
+            if (monto <= 0) {
+                mensaje("Ingrese un monto mayor a 0");
+                return;
             }
+
+            if (monto > saldo) {
+                mensaje("Saldo insuficiente");
+                return;
+            }
+
+            saldo -= monto;
+            actualizarSaldo();
+            historialArea.append("Retiro de $" + monto + "\n");
+            mensaje("Retiro exitoso");
         });
 
-        // BOTÓN TRANSFERENCIA
-        btnTransferencia.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
+        btnTransferencia.addActionListener(e -> {
 
-                String destinatario = JOptionPane.showInputDialog("Nombre del destinatario:");
-                if (destinatario == null || destinatario.isEmpty()) return;
-
-                String valor = JOptionPane.showInputDialog("Monto a transferir:");
-                if (valor == null || valor.isEmpty()) return;
-
-                double monto = Double.parseDouble(valor);
-
-                if (monto > saldo) {
-                    JOptionPane.showMessageDialog(null, "Saldo insuficiente");
-                    return;
-                }
-
-                saldo -= monto;
-
-                actualizarSaldo();
-                agregarHistorial("Transferencia de $" + monto + " a " + destinatario);
-                JOptionPane.showMessageDialog(null, "Transferencia exitosa a " + destinatario);
+            String destinatario = JOptionPane.showInputDialog("Nombre del destinatario:");
+            if (destinatario == null || destinatario.isBlank()) {
+                mensaje("Ingrese un nombre válido");
+                return;
             }
+
+            String valor = JOptionPane.showInputDialog("Monto a transferir:");
+            if (!entradaValida(valor)) return;
+
+            double monto = Double.parseDouble(valor);
+            if (monto <= 0) {
+                mensaje("Ingrese un monto mayor a 0");
+                return;
+            }
+
+            if (monto > saldo) {
+                mensaje("Saldo insuficiente");
+                return;
+            }
+
+            saldo -= monto;
+            actualizarSaldo();
+            historialArea.append("Transferencia de $" + monto + " a " + destinatario + "\n");
+            mensaje("Transferencia exitosa a " + destinatario + " por $" + monto);
         });
 
-        // BOTÓN SALIR
         btnSalir.addActionListener(e -> System.exit(0));
+    }
 
+    private boolean entradaValida(String valor) {
+
+        if (valor == null) return false;
+        if (valor.isBlank()) {
+            mensaje("Ingrese un valor");
+            return false;
+        }
+        if (!valor.matches("[0-9]+(\\.[0-9]+)?")) {
+            mensaje("Ingrese solo números");
+            return false;
+        }
+        return true;
+    }
+
+    private void mensaje(String m) {
+        JOptionPane.showMessageDialog(this, m);
     }
 
     private void actualizarSaldo() {
-        labelSaldo.setText("Saldo: $" + saldo);
-    }
-
-    private void agregarHistorial(String mensaje) {
-        historialArea.append(mensaje + "\n");
+        labelSaldo.setText("Saldo actual: $" + saldo);
     }
 }
